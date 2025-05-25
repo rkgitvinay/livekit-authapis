@@ -1,27 +1,43 @@
 import os
 from typing import List
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
+from functools import lru_cache
 
-load_dotenv()
-
-class Settings:
+class Settings(BaseSettings):
     """
     Application settings loaded from environment variables
     """
-    def __init__(self):
-        self.LIVEKIT_URL = os.getenv("LIVEKIT_URL", "")
-        self.LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "")
-        self.LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "")
-        
-        # Parse ALLOWED_ORIGINS
-        origins_str = os.getenv("ALLOWED_ORIGINS", "")
-        if origins_str:
-            self.ALLOWED_ORIGINS = [origin.strip() for origin in origins_str.split(",") if origin.strip()]
-        else:
-            self.ALLOWED_ORIGINS = ["*"]  # Default to allow all origins
-        
-        self.HOST = os.getenv("HOST", "0.0.0.0")
-        self.PORT = int(os.getenv("PORT", "5001"))
-        self.DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+    # LiveKit Configuration
+    LIVEKIT_URL: str
+    LIVEKIT_API_KEY: str
+    LIVEKIT_API_SECRET: str
+    
+    # API Configuration
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "LiveKit Auth API"
+    
+    # Security
+    ALLOWED_ORIGINS: List[str] = ["*"]
+    API_KEY_HEADER: str = "X-API-Key"
+    API_KEY: str = "1234567890"  # For API authentication
+    
+    # Rate Limiting
+    RATE_LIMIT_PER_MINUTE: int = 60
+    
+    # Server Configuration
+    HOST: str = "0.0.0.0"
+    PORT: int = 5001
+    DEBUG: bool = False
+    
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+settings = get_settings()

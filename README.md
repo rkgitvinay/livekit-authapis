@@ -1,89 +1,167 @@
-# LiveKit Auth API
+# LiveKit Authentication APIs
 
-A FastAPI application for LiveKit room management and token generation.
+A FastAPI-based service for managing LiveKit authentication and room management. This service provides APIs for generating LiveKit tokens, managing rooms, and handling user authentication.
 
 ## Features
 
-- Generate LiveKit access tokens for users
-- Automatic room creation and management
-- Configurable CORS settings via environment variables
-- Modern FastAPI framework with async support
+- LiveKit token generation with customizable metadata
+- Room management (list, create, delete)
+- User authentication and management
+- API key-based authentication
+- Standardized response format
+- Comprehensive error handling
+- Rate limiting
+- Request validation
+- Detailed API documentation
 
 ## Project Structure
 
 ```
-livekit-auth-api/
+livekit-authapis/
 ├── app/
 │   ├── api/
-│   │   ├── __init__.py
-│   │   └── routes.py
+│   │   ├── routes/
+│   │   │   ├── __init__.py      # Main router configuration
+│   │   │   ├── health.py        # Health check endpoints
+│   │   │   ├── user.py          # User management endpoints
+│   │   │   └── agent.py         # LiveKit agent and room management
+│   │   └── models.py            # Request/Response models
 │   ├── core/
-│   │   ├── __init__.py
-│   │   └── config.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   └── livekit_service.py
-│   ├── __init__.py
-│   └── main.py
-├── .env
-├── main.py
-├── README.md
-└── requirements.txt
-```
-
-## Setup
-
-1. Clone the repository
-2. Set up your environment variables in `.env` file:
-   ```
-   LIVEKIT_API_KEY=your_api_key
-   LIVEKIT_API_SECRET=your_api_secret
-   ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
-   HOST=0.0.0.0
-   PORT=5001
-   DEBUG=True
-   ```
-3. Install dependencies using uv:
-   ```
-   uv pip install -r requirements.txt
-   ```
-
-## Running the Application
-
-```
-python main.py
-```
-
-Or using uvicorn directly:
-
-```
-uvicorn app.main:app --host 0.0.0.0 --port 5001 --reload
+│   │   ├── config.py            # Configuration settings
+│   │   ├── middleware.py        # Custom middleware
+│   │   └── logging.py           # Logging configuration
+│   └── services/
+│       └── livekit_service.py   # LiveKit service implementation
+├── tests/                       # Test files
+├── .env.example                 # Example environment variables
+├── requirements.txt             # Project dependencies
+└── README.md                    # Project documentation
 ```
 
 ## API Endpoints
 
-### GET /getToken
+### Health Check
+- `GET /health` - Check service health status
 
-Generate a LiveKit access token for a user and room.
+### User Management (`/user`)
+- `GET /` - Get current user information
+- `POST /register` - Register a new user
+- `PUT /profile` - Update user profile
 
-**Query Parameters:**
-- `name` (optional): User's name/identity (default: "my name")
-- `room` (optional): Room name (if not provided, a unique room name will be generated)
+### LiveKit Agent (`/agent`)
+- `POST /token` - Generate LiveKit access token
+- `GET /rooms` - List all active LiveKit rooms
+- `DELETE /rooms/{room_name}` - Delete a specific LiveKit room
 
-**Response:**
-- A JWT token string for LiveKit access
+## Setup Instructions
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd livekit-authapis
+```
+
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+4. Create a `.env` file from the example:
+```bash
+cp .env.example .env
+```
+
+5. Update the `.env` file with your configuration:
+```env
+# LiveKit Configuration
+LIVEKIT_API_KEY=your_api_key
+LIVEKIT_API_SECRET=your_api_secret
+LIVEKIT_HOST=your_livekit_host
+
+# API Configuration
+API_KEY=your_api_key
+ENVIRONMENT=development
+LOG_LEVEL=INFO
+```
+
+6. Run the application:
+```bash
+uvicorn app.main:app --reload
+```
+
+The API will be available at `http://localhost:8000`
+
+## API Documentation
+
+Once the server is running, you can access:
+- Swagger UI documentation: `http://localhost:8000/docs`
+- ReDoc documentation: `http://localhost:8000/redoc`
+
+## Response Format
+
+All API responses follow a standardized format:
+
+### Success Response
+```json
+{
+    "status": "success",
+    "message": "Operation successful",
+    "data": {
+        // Response data specific to the endpoint
+    }
+}
+```
+
+### Error Response
+```json
+{
+    "status": "error",
+    "message": "Error message",
+    "code": "ERROR_CODE",
+    "details": {
+        // Additional error details (optional)
+    }
+}
+```
+
+## Authentication
+
+All endpoints (except health check) require API key authentication. Include the API key in the request header:
+
+```
+X-API-Key: your_api_key
+```
+
+## Error Codes
+
+- `TOKEN_GENERATION_ERROR` - Error generating LiveKit token
+- `ROOM_LIST_ERROR` - Error listing LiveKit rooms
+- `ROOM_DELETION_ERROR` - Error deleting LiveKit room
+- `INTERNAL_ERROR` - Unexpected server error
 
 ## Development
 
-This project uses uv for package management. To add new dependencies:
+### Running Tests
+```bash
+pytest
+```
 
-```
-uv pip install package_name
+### Code Style
+The project follows PEP 8 guidelines. Use `black` for code formatting:
+```bash
+black .
 ```
 
-Then update the requirements.txt file:
+## License
 
-```
-uv pip freeze > requirements.txt
-```
-"# livekit-authapis" 
+[Your License]
+
+## Contributing
+
+[Your Contributing Guidelines] 

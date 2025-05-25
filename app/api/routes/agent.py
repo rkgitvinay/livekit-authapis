@@ -13,23 +13,8 @@ from app.api.models import (
 import logging
 
 logger = logging.getLogger(__name__)
-
-router = APIRouter(prefix=settings.API_V1_STR)
+router = APIRouter()
 api_key_auth = APIKeyAuth()
-
-@router.get(
-    "/health",
-    response_model=SuccessResponse[dict],
-    tags=["Health"]
-)
-async def health_check():
-    """
-    Health check endpoint
-    """
-    return SuccessResponse.create(
-        data={"status": "healthy"},
-        message="Service is healthy"
-    )
 
 @router.post(
     "/token",
@@ -38,8 +23,7 @@ async def health_check():
         400: {"model": ErrorResponse},
         403: {"model": ErrorResponse},
         500: {"model": ErrorResponse}
-    },
-    tags=["Authentication"]
+    }
 )
 async def get_token(
     request: TokenRequest,
@@ -96,8 +80,7 @@ async def get_token(
     responses={
         403: {"model": ErrorResponse},
         500: {"model": ErrorResponse}
-    },
-    tags=["Rooms"]
+    }
 )
 async def list_rooms(api_key: str = Depends(api_key_auth)):
     """
@@ -141,8 +124,7 @@ async def list_rooms(api_key: str = Depends(api_key_auth)):
         403: {"model": ErrorResponse},
         404: {"model": ErrorResponse},
         500: {"model": ErrorResponse}
-    },
-    tags=["Rooms"]
+    }
 )
 async def delete_room(room_name: str, api_key: str = Depends(api_key_auth)):
     """
@@ -178,4 +160,4 @@ async def delete_room(room_name: str, api_key: str = Depends(api_key_auth)):
                 message="Internal server error",
                 code="INTERNAL_ERROR"
             ).dict()
-        )
+        ) 
