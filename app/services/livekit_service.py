@@ -18,30 +18,22 @@ class LiveKitService:
     """
     
     @staticmethod
-    async def get_rooms() -> List[Dict]:
+    async def get_rooms() -> List[str]:
         """
-        Get a list of all rooms from LiveKit with their details
+        Get a list of all room names from LiveKit
         
         Returns:
-            List[Dict]: List of room information
+            List[str]: List of room names
         """
         try:
             livekit_api = api.LiveKitAPI(url=settings.LIVEKIT_URL)
             rooms_response = await livekit_api.room.list_rooms(api.ListRoomsRequest())
-            
-            rooms = []
-            for room in rooms_response.rooms:
-                rooms.append({
-                    "name": room.name,
-                    "num_participants": len(room.participants),
-                    "created_at": int(room.creation_time.timestamp())
-                })
-            
+            room_names = [room.name for room in rooms_response.rooms]
             await livekit_api.aclose()
-            return rooms
+            return room_names
         except Exception as e:
-            logger.error(f"Error listing rooms: {str(e)}")
-            raise LiveKitServiceError(f"Failed to list rooms: {str(e)}")
+            print(f"Error listing rooms: {e}")
+            return []
     
     @staticmethod
     async def generate_room_name() -> str:
@@ -54,9 +46,7 @@ class LiveKitService:
         try:
             name = f"room-{str(uuid.uuid4())[:8]}"
             rooms = await LiveKitService.get_rooms()
-            existing_names = {room["name"] for room in rooms}
-            
-            while name in existing_names:
+            while name in rooms:
                 name = f"room-{str(uuid.uuid4())[:8]}"
             return name
         except Exception as e:
@@ -93,27 +83,18 @@ class LiveKitService:
             # Set the identity and name
             token = token.with_identity(name).with_name(name)
             
-            # Add metadata if provided
-            if metadata:
-                token = token.with_metadata(metadata)
-            
             # Add grants
             token = token.with_grants(api.VideoGrants(
                 room_join=True,
                 room=room
             ))
             
-            # Set expiration
-            expires_at = int(time.time()) + ttl
-            token = token.with_expiration(expires_at)
-            
             # Generate the JWT
             jwt_token = token.to_jwt()
             
             return {
                 "token": jwt_token,
-                "room": room,
-                "expires_at": expires_at
+                "room": room
             }
         except Exception as e:
             logger.error(f"Error generating token: {str(e)}")

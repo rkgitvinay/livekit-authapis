@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # Security
     ALLOWED_ORIGINS: List[str] = ["*"]
     API_KEY_HEADER: str = "X-API-Key"
-    API_KEY: str = "1234567890"  # For API authentication
+    API_KEY: str = "6d3c934fc96e5d669f28f209e06e5e2f"  # For API authentication
     
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60

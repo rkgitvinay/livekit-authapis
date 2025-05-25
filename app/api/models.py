@@ -35,7 +35,6 @@ class TokenRequest(BaseModel):
 class TokenData(BaseModel):
     token: str = Field(..., description="JWT token for LiveKit access")
     room: str = Field(..., description="Room name")
-    expires_at: int = Field(..., description="Token expiration timestamp")
 
 class RoomInfo(BaseModel):
     name: str = Field(..., description="Room name")
