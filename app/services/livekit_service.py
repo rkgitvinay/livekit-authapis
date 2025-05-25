@@ -18,22 +18,91 @@ class LiveKitService:
     """
     
     @staticmethod
-    async def get_rooms() -> List[str]:
+    async def get_rooms() -> List[Dict]:
         """
         Get a list of all room names from LiveKit
         
         Returns:
-            List[str]: List of room names
+            List[Dict]: List of room data including name, creation time, and empty timeout
         """
         try:
-            livekit_api = api.LiveKitAPI(url=settings.LIVEKIT_URL)
+            logger.debug(f"Connecting to LiveKit at {settings.LIVEKIT_URL}")
+            livekit_api = api.LiveKitAPI(
+                url=settings.LIVEKIT_URL,
+                api_key=settings.LIVEKIT_API_KEY,
+                api_secret=settings.LIVEKIT_API_SECRET
+            )
+            
+            logger.debug("Requesting room list from LiveKit")
             rooms_response = await livekit_api.room.list_rooms(api.ListRoomsRequest())
-            room_names = [room.name for room in rooms_response.rooms]
+            
+            if not hasattr(rooms_response, 'rooms'):
+                logger.error("Invalid response from LiveKit: missing 'rooms' attribute")
+                raise LiveKitServiceError("Invalid response from LiveKit server")
+            
+            rooms_data = []
+            for room in rooms_response.rooms:
+                created_at = room.creation_time
+                if hasattr(created_at, 'timestamp'):
+                    created_at = int(created_at.timestamp())
+                
+                rooms_data.append({
+                    "name": room.name,
+                    "created_at": created_at,
+                    "empty_timeout": room.empty_timeout
+                })
+            
+            logger.debug(f"Found {len(rooms_data)} rooms")
             await livekit_api.aclose()
-            return room_names
+            return rooms_data
+            
+        except api.ApiException as e:
+            logger.error(f"LiveKit API error: {str(e)}")
+            raise LiveKitServiceError(f"LiveKit API error: {str(e)}")
         except Exception as e:
-            print(f"Error listing rooms: {e}")
-            return []
+            logger.error(f"Error listing rooms: {str(e)}")
+            raise LiveKitServiceError(f"Failed to list rooms: {str(e)}")
+    
+    @staticmethod
+    async def create_room(room_name: str, empty_timeout: int = 300) -> Dict:
+        """
+        Create a new LiveKit room
+        
+        Args:
+            room_name (str): Name of the room to create
+            empty_timeout (int): Time in seconds to wait before deleting empty room
+            
+        Returns:
+            Dict: Room information including name and creation time
+        """
+        try:
+            logger.debug(f"Creating room {room_name} with timeout {empty_timeout}")
+            logger.debug(f"Using LiveKit URL: {settings.LIVEKIT_URL}")
+            livekit_api = api.LiveKitAPI(
+                url=settings.LIVEKIT_URL,
+                api_key=settings.LIVEKIT_API_KEY,
+                api_secret=settings.LIVEKIT_API_SECRET
+            )
+            create_request = api.CreateRoomRequest(
+                name=room_name,
+                empty_timeout=empty_timeout
+            )
+            room = await livekit_api.room.create_room(create_request)
+            await livekit_api.aclose()
+            
+            # Handle creation_time which could be either int or datetime
+            created_at = room.creation_time
+            if hasattr(created_at, 'timestamp'):
+                created_at = int(created_at.timestamp())
+            
+            return {
+                "name": room.name,
+                "created_at": created_at,
+                "empty_timeout": room.empty_timeout
+            }
+        except Exception as e:
+            logger.error(f"Error creating room {room_name}: {str(e)}")
+            raise LiveKitServiceError(f"Failed to create room: {str(e)}")
     
     @staticmethod
     async def generate_room_name() -> str:
@@ -112,7 +181,11 @@ class LiveKitService:
             bool: True if room was deleted successfully
         """
         try:
-            livekit_api = api.LiveKitAPI(url=settings.LIVEKIT_URL)
+            livekit_api = api.LiveKitAPI(
+                url=settings.LIVEKIT_URL,
+                api_key=settings.LIVEKIT_API_KEY,
+                api_secret=settings.LIVEKIT_API_SECRET
+            )
             await livekit_api.room.delete_room(api.DeleteRoomRequest(room=room_name))
             await livekit_api.aclose()
             return True

@@ -3,18 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.core.config import settings
 from app.core.middleware import RateLimitMiddleware, LoggingMiddleware
+from app.core.logging import setup_logging
 import logging
 import sys
 
-# Configure logging
-logging.basicConfig(
-    level=settings.LOG_LEVEL,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-
+# Set up logging
+setup_logging()
 logger = logging.getLogger(__name__)
 
 def create_application() -> FastAPI:
@@ -25,8 +19,8 @@ def create_application() -> FastAPI:
         FastAPI: Configured FastAPI application instance
     """
     application = FastAPI(
-        title=settings.PROJECT_NAME,
-        description="API for LiveKit room management and token generation",
+        title="LiveKit Auth APIs",
+        description="Authentication and room management APIs for LiveKit",
         version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
@@ -53,13 +47,13 @@ def create_application() -> FastAPI:
     
     @application.on_event("startup")
     async def startup_event():
-        logger.info("Starting up application...")
-        # Add any startup initialization here
+        logger.info("Starting up LiveKit Auth APIs")
+        logger.debug(f"Environment: {settings.ENVIRONMENT}")
+        logger.debug(f"LiveKit URL: {settings.LIVEKIT_URL}")
     
     @application.on_event("shutdown")
     async def shutdown_event():
-        logger.info("Shutting down application...")
-        # Add any cleanup code here
+        logger.info("Shutting down LiveKit Auth APIs")
     
     return application
 
